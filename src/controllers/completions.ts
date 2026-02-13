@@ -1,26 +1,26 @@
 import type { RequestHandler } from 'express';
-import { zodResponseFormat } from 'openai/helpers/zod';
-import Pokedex from 'pokedex-promise-v2';
-import { z } from 'zod';
-import { FinalResponse, PromptBodySchema, Intent } from '#schemas';
 import OpenAI from 'openai';
+import Pokedex from 'pokedex-promise-v2';
+import type { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
 import type { ChatCompletionMessageParam } from 'openai/resources';
+import { type promptBodySchema, intentSchema, finalResponseSchema } from '#schemas';
 
-type IncomingPrompt = z.infer<typeof PromptBodySchema>;
-type FinalResponseDTO = z.infer<typeof FinalResponse> | { completion: string };
+type IncomingPrompt = z.infer<typeof promptBodySchema>;
+type FinalResponseDTO = z.infer<typeof finalResponseSchema> | { completion: string };
 
 export const createCompletion: RequestHandler<unknown, FinalResponseDTO, IncomingPrompt> = async (
   req,
   res
 ) => {
-  const { prompt, stream } = req.body;
-  // OpenAI client setup
+  const { prompt } = req.body;
   const client = new OpenAI({
     apiKey:
       process.env.NODE_ENV === 'development'
         ? process.env.LOCAL_LLM_KEY
         : process.env.OPENAI_API_KEY,
-    baseURL: process.env.NODE_ENV === 'development' ? process.env.LOCAL_LLM_URL : undefined
+    baseURL:
+      process.env.NODE_ENV === 'development' ? process.env.LOCAL_LLM_URL : process.env.OPENAI_URL
   });
   // Model, we define it here so we can use it in both steps
   const model =
@@ -32,7 +32,7 @@ export const createCompletion: RequestHandler<unknown, FinalResponseDTO, Incomin
     {
       role: 'system',
       content:
-        'You determine if a question is about Pokémon. You can only answer questions about a sinlge Pokémon and not open-ended questions.'
+        'You determine if a question is about Pokémon. You can only answer questions about a single Pokémon and not open-ended questions.'
     },
     {
       role: 'user',
@@ -44,7 +44,7 @@ export const createCompletion: RequestHandler<unknown, FinalResponseDTO, Incomin
     model,
     messages,
     temperature: 0,
-    response_format: zodResponseFormat(Intent, 'Intent')
+    response_format: zodResponseFormat(intentSchema, 'Intent')
   });
 
   const intent = checkIntentCompletion.choices[0]?.message.parsed;
@@ -68,7 +68,8 @@ export const createCompletion: RequestHandler<unknown, FinalResponseDTO, Incomin
     });
     return;
   }
-  console.log(`\x1b[32mFetched data for Pokémon: ${pokemonData.name}\x1b[0m.`);
+  console.log(`\x1b[32mFetched data for Pokémon: ${pokemonData.name}\x1b[0m`);
+  // Step 3 goes here
   // Step 3: Add the Pokémon data to the messages and generate a final response
   messages.push({
     role: 'assistant',
@@ -82,7 +83,7 @@ export const createCompletion: RequestHandler<unknown, FinalResponseDTO, Incomin
     model,
     messages,
     temperature: 0,
-    response_format: zodResponseFormat(FinalResponse, 'FinalResponse')
+    response_format: zodResponseFormat(finalResponseSchema, 'FinalResponse')
   });
   const finalResponse = finalCompletion.choices[0]?.message.parsed;
   if (!finalResponse) {
