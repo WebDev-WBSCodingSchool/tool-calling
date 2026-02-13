@@ -1,21 +1,20 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
-export const PromptBodySchema = z.object({
+export const promptBodySchema = z.object({
   prompt: z
     .string()
     .min(1, 'Prompt cannot be empty')
-    .max(1000, 'Prompt cannot exceed 1000 characters'),
-  stream: z.boolean().optional().default(false)
+    .max(1000, 'Prompt cannot exceed 1000 characters')
 });
 
-export const Intent = z.object({
+export const intentSchema = z.object({
   isPokemon: z.boolean(),
   type: z.string(),
   pokemonName: z.string(),
   reason: z.string()
 });
 
-export const FinalResponse = z.object({
+export const finalResponseSchema = z.object({
   id: z.number(),
   name: z.string(),
   aboutSpecies: z.string(),
