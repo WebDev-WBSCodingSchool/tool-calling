@@ -1,14 +1,10 @@
 import type { RequestHandler } from 'express';
-import { zodResponseFormat } from 'openai/helpers/zod';
-import type {
-  ChatCompletionCreateParamsNonStreaming,
-  ChatCompletionMessageParam
-} from 'openai/resources';
-import type { z } from 'zod';
-import { createOpenAICompletion } from '#utils';
-import { type promptBodySchema, finalResponseSchema, intentSchema } from '#schemas';
 import OpenAI from 'openai';
 import Pokedex from 'pokedex-promise-v2';
+import type { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
+import type { ChatCompletionMessageParam } from 'openai/resources';
+import { type promptBodySchema, intentSchema, finalResponseSchema } from '#schemas';
 
 type IncomingPrompt = z.infer<typeof promptBodySchema>;
 type FinalResponseDTO = z.infer<typeof finalResponseSchema> | { completion: string };
